@@ -14,17 +14,17 @@ PS : CHR-ID is the CHAR ID found in database in characters or you can get it by 
 
 for me i edited the scoreboard to show CHR-ID after username.
 
-addsm CHR-ID.                                        -- adds sell marker
+addsm CHR-ID.                                        ---- adds sell marker
 
-addstockm CHR-ID.                                        -- adds stock marker
+addstockm CHR-ID.                                        ---- adds stock marker
 
 ps : addstockm CHR-ID must be the same as addsm CHR-ID.
 
-thisshop.                                        -- gets current shop ID
+thisshop.                                        ---- gets current shop ID
 
-getallshops.                                        -- gets All shops in the server
+getallshops.                                        ---- gets All shops in the server
 
-delthisshop ID.                                        -- delete the shop with the ID
+delthisshop ID.                                        ---- delete the shop with the ID
 
 After doing the commands use restartres CoffeShops To apply the modifications.
 
