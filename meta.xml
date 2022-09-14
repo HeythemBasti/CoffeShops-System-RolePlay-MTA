@@ -1,0 +1,7 @@
+<meta>
+<info author="Yazo" type="script" version="1.5.0" />
+	<file src="index.html" />
+	<script src="client.lua" type="client" cache="false" />
+	<script src="server.lua" type="server" />
+	<file src="logo.png" />
+</meta>
