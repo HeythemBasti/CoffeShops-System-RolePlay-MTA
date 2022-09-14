@@ -1,7 +1,7 @@
 
 
 addEventHandler ("onResourceStart", resourceRoot, function()
- local delkeys = exports.sal:_Query( "SELECT * FROM CAFESHOPS " )
+ local delkeys = exports.newSQL:_Query( "SELECT * FROM CAFESHOPS " )
  
  for i, data in pairs (delkeys) do
 	   data["shopID"] = createMarker (tonumber(data["SellposX"]), tonumber(data["SellposY"]), tonumber(data["SellposZ"])-1, "cylinder", 1.5, 50, 0, 0,170)
@@ -58,7 +58,7 @@ if getElementType (el) == "player" then
                                          elseif getElementData(el,"dbid") == ownerCharID then
        
 
-	   local getTable = exports.sal:_QuerySingle( "SELECT * FROM CAFESHOPS WHERE ownerCharID= ?", ownerCharID)
+	   local getTable = exports.newSQL:_QuerySingle( "SELECT * FROM CAFESHOPS WHERE ownerCharID= ?", ownerCharID)
 
 	   
 if not exports.global:hasItem(el, 79) and not exports.global:hasItem(el, 183) then          -- item fardo check
@@ -80,7 +80,7 @@ if exports.global:takeItem( el, 183, itemvalue1) then   -- add new stock
 
 local newVal1 = getTable.Food + 12 
 
-exports.sal:_Exec("UPDATE `CAFESHOPS` SET `Food` = ? WHERE `ownerCharID` = " .. ownerCharID.."",newVal1)
+exports.newSQL:_Exec("UPDATE `CAFESHOPS` SET `Food` = ? WHERE `ownerCharID` = " .. ownerCharID.."",newVal1)
 
 outputChatBox("تمت اضافة |".. newVal1 .."|  طعام  ", el, 0, 255, 0, true)
 
@@ -101,7 +101,7 @@ if exports.global:takeItem( el, 79, itemvalue) then   -- add new stock
 
 local newVal = getTable.Water + 12 
 
-exports.sal:_Exec("UPDATE `CAFESHOPS` SET `Water` = ? WHERE `ownerCharID` = " .. ownerCharID.."",newVal)
+exports.newSQL:_Exec("UPDATE `CAFESHOPS` SET `Water` = ? WHERE `ownerCharID` = " .. ownerCharID.."",newVal)
 
 outputChatBox("تمت اضافة |".. newVal .."|  قارورة مياه ", el, 0, 255, 0, true)
 
@@ -151,18 +151,19 @@ else
 		if dimension == 0 and interiorchk == 0 then 
 		outputChatBox("لا يمكنك فعل هاذا في الخارج", source, 255, 255, 0)
 		return end		
-		
 		    local possibleInteriors = exports.pool:getPoolElementsByType('interior')
+			
 		for _, interior in ipairs(possibleInteriors) do
 			local interiorEntrance = getElementData(interior, "entrance")
 			local interiorExit = getElementData(interior, "exit")
 		for _, point in ipairs( { interiorExit } ) do
-			
-			if (point[5] == dimension) then
-					local distance = getDistanceBetweenPoints3D(posX, posY, posZ, point[1], point[2], point[3])
+
+			if (point.dim == dimension) then
+					local distance = getDistanceBetweenPoints3D(posX, posY, posZ, point.x, point.y, point.z)
+
 			if (distance <= 50) then
 			      local dbid = getElementData(interior, "dbid")
-                  local q = exports.sal:_QuerySingle( "SELECT type FROM interiors WHERE id = ?", dbid )
+                  local q = exports.newSQL:_QuerySingle( "SELECT type FROM interiors WHERE id = ?", dbid )
 
 
 if q.type == 0 then   --house
@@ -216,7 +217,7 @@ if getElementData(source,"addSellConfirm") == getPlayerName(thePlayerOwner) then
                           setElementData(source,"addSellConfirm",false)		
 		end,505,1)
 
-exports.sal:_Exec("INSERT INTO `CAFESHOPS` (`shopID`, `ShopintDBID`, `SellposX`, `SellposY`, `SellposZ`, `SellDim`, `SellInt`, `ownerCharID`, `createdBY`) values (NULL,?, ?, ?, ?, ?, ?, ?, ?)",dbid,posX,posY,posZ,dimension,interiorchk,ownerCharID,createdbyuser)
+exports.newSQL:_Exec("INSERT INTO `CAFESHOPS` (`shopID`, `ShopintDBID`, `SellposX`, `SellposY`, `SellposZ`, `SellDim`, `SellInt`, `ownerCharID`, `createdBY`) values (NULL,?, ?, ?, ?, ?, ?, ?, ?)",dbid,posX,posY,posZ,dimension,interiorchk,ownerCharID,createdbyuser)
 
 				           outputChatBox("تم صناعة الشوب بنجاح ", source, 0, 255, 0)		
 
@@ -228,7 +229,6 @@ exports.sal:_Exec("INSERT INTO `CAFESHOPS` (`shopID`, `ShopintDBID`, `SellposX`,
 
 
 elseif q.type == 1 then    -- BUSSINES
-
 
 
              if not exports.global:hasItem(source, 5,dbid) then 
@@ -264,7 +264,7 @@ if getElementData(source,"addSellConfirm") == getPlayerName(thePlayerOwner) then
                           setElementData(source,"addSellConfirm",false)		
 		end,505,1)
 
-exports.sal:_Exec("INSERT INTO `CAFESHOPS` (`shopID`, `ShopintDBID`, `SellposX`, `SellposY`, `SellposZ`, `SellDim`, `SellInt`, `ownerCharID`, `createdBY`) values (NULL,?, ?, ?, ?, ?, ?, ?, ?)",dbid,posX,posY,posZ,dimension,interiorchk,ownerCharID,createdbyuser)
+exports.newSQL:_Exec("INSERT INTO `CAFESHOPS` (`shopID`, `ShopintDBID`, `SellposX`, `SellposY`, `SellposZ`, `SellDim`, `SellInt`, `ownerCharID`, `createdBY`) values (NULL,?, ?, ?, ?, ?, ?, ?, ?)",dbid,posX,posY,posZ,dimension,interiorchk,ownerCharID,createdbyuser)
 
 				           outputChatBox("تم صناعة الشوب بنجاح ", source, 0, 255, 0)		
 
@@ -350,25 +350,30 @@ outputChatBox( "CharID خطأ اكتب قيمة رقم حقيقي ", localPlayer
 
 else
 
+
         local posX, posY, posZ = getElementPosition(source)
 		local dimension = getElementDimension(source)
 	    local interiorchk = getElementInterior(source)
-		
+		local createduser = getElementData(source, "account:username")
+		local createdchar = getElementData(source, "dbid")
+		local createdbyuser = ""..createduser .. "--"..createdchar ..""
+
 		if dimension == 0 and interiorchk == 0 then 
 		outputChatBox("لا يمكنك فعل هاذا في الخارج", source, 255, 255, 0)
 		return end		
-		
 		    local possibleInteriors = exports.pool:getPoolElementsByType('interior')
+			
 		for _, interior in ipairs(possibleInteriors) do
 			local interiorEntrance = getElementData(interior, "entrance")
 			local interiorExit = getElementData(interior, "exit")
 		for _, point in ipairs( { interiorExit } ) do
-			
-			if (point[5] == dimension) then
-					local distance = getDistanceBetweenPoints3D(posX, posY, posZ, point[1], point[2], point[3])
+
+			if (point.dim == dimension) then
+					local distance = getDistanceBetweenPoints3D(posX, posY, posZ, point.x, point.y, point.z)
+
 			if (distance <= 50) then
 			      local dbid = getElementData(interior, "dbid")
-                  local q = exports.sal:_QuerySingle( "SELECT type FROM interiors WHERE id = ?", dbid )
+                  local q = exports.newSQL:_QuerySingle( "SELECT type FROM interiors WHERE id = ?", dbid )
 
 
 if q.type == 0 then   --house
@@ -409,7 +414,7 @@ elseif thePlayerOwner then
                           setElementData(source,"addStockConfirm",getPlayerName(thePlayerOwner))
 		end,505,1)
 
-				 local shopidd = exports.sal:_QuerySingle( "SELECT shopID FROM CAFESHOPS WHERE `ownerCharID` = " .. ownerCharID .."")
+				 local shopidd = exports.newSQL:_QuerySingle( "SELECT shopID FROM CAFESHOPS WHERE `ownerCharID` = " .. ownerCharID .."")
 				 
 if getElementData(source,"addStockConfirm") == getPlayerName(thePlayerOwner) then
 
@@ -421,7 +426,7 @@ if getElementData(source,"addStockConfirm") == getPlayerName(thePlayerOwner) the
 		setTimer(function()
                           setElementData(source,"addStockConfirm",false)		
 		end,505,1)
-exports.sal:_Exec("UPDATE `CAFESHOPS` SET `stockID` = '"..shopidd.shopID.."', `StockPosX` = '"..posX.."',`StockPosY` = '"..posY.."', `StockPosZ` = '"..posZ.."', `StockDim` = '"..dimension.."', `StockInt` = '"..interiorchk.."' WHERE `ownerCharID` = " .. ownerCharID .."")
+exports.newSQL:_Exec("UPDATE `CAFESHOPS` SET `stockID` = '"..shopidd.shopID.."', `StockPosX` = '"..posX.."',`StockPosY` = '"..posY.."', `StockPosZ` = '"..posZ.."', `StockDim` = '"..dimension.."', `StockInt` = '"..interiorchk.."' WHERE `ownerCharID` = " .. ownerCharID .."")
 
 				           outputChatBox("ID # "..shopidd.shopID.." تم صناعة الشوب بنجاح ", source, 0, 255, 0)		
 
@@ -457,7 +462,7 @@ elseif thePlayerOwner then
                           setElementData(source,"addStockConfirm",getPlayerName(thePlayerOwner))
 		end,505,1)
 
-				 local shopidd = exports.sal:_QuerySingle( "SELECT shopID FROM CAFESHOPS WHERE `ownerCharID` = " .. ownerCharID .."")
+				 local shopidd = exports.newSQL:_QuerySingle( "SELECT shopID FROM CAFESHOPS WHERE `ownerCharID` = " .. ownerCharID .."")
 				 
 if getElementData(source,"addStockConfirm") == getPlayerName(thePlayerOwner) then
 
@@ -469,7 +474,7 @@ if getElementData(source,"addStockConfirm") == getPlayerName(thePlayerOwner) the
 		setTimer(function()
                           setElementData(source,"addStockConfirm",false)		
 		end,505,1)
-exports.sal:_Exec("UPDATE `CAFESHOPS` SET `stockID` = '"..shopidd.shopID.."', `StockPosX` = '"..posX.."',`StockPosY` = '"..posY.."', `StockPosZ` = '"..posZ.."', `StockDim` = '"..dimension.."', `StockInt` = '"..interiorchk.."' WHERE `ownerCharID` = " .. ownerCharID .."")
+exports.newSQL:_Exec("UPDATE `CAFESHOPS` SET `stockID` = '"..shopidd.shopID.."', `StockPosX` = '"..posX.."',`StockPosY` = '"..posY.."', `StockPosZ` = '"..posZ.."', `StockDim` = '"..dimension.."', `StockInt` = '"..interiorchk.."' WHERE `ownerCharID` = " .. ownerCharID .."")
 
 				           outputChatBox("ID # "..shopidd.shopID.." تم صناعة الشوب بنجاح ", source, 0, 255, 0)		
 
@@ -535,13 +540,13 @@ outputChatBox( "shopID خطأ اكتب قيمة رقم حقيقي ", localPlayer
 	outputChatBox( "shopID خطأ اكتب قيمة رقم حقيقي ", localPlayer1, 255, 0, 0)
 
 else
-		       	     local getCharIdFromShopId = exports.sal:_QuerySingle( "SELECT ownerCharID FROM CAFESHOPS WHERE shopID = ?", shopID)
+		       	     local getCharIdFromShopId = exports.newSQL:_QuerySingle( "SELECT ownerCharID FROM CAFESHOPS WHERE shopID = ?", shopID)
 					 if getCharIdFromShopId == nil then
 					 			 outputChatBox("لا يوجد شوب بهاذا الايدي اعد المحاولة بعد التحقق", source, 255, 126, 0)
 
 					 return end
 					 
-                     local getCharName = exports.sal:_QuerySingle( "SELECT charactername FROM characters WHERE id = ?", getCharIdFromShopId.ownerCharID)
+                     local getCharName = exports.newSQL:_QuerySingle( "SELECT charactername FROM characters WHERE id = ?", getCharIdFromShopId.ownerCharID)
 
 			 outputChatBox("هل انت متاكد انك ستحذف الشوب رقم ".. shopID .." المكتوب بأسم ".. getCharName.charactername .."", source, 255, 126, 0)
 				
@@ -553,7 +558,7 @@ else
  if getElementData(source,"delshopConfirm") == shopID then
 
 
-               exports.sal:_Exec("DELETE FROM CAFESHOPS WHERE shopID=?", shopID)
+               exports.newSQL:_Exec("DELETE FROM CAFESHOPS WHERE shopID=?", shopID)
 			   
  				outputChatBox("تم حذف الشوب رقم ".. shopID .." بنجاح", source, 255, 126, 0)
 				
@@ -583,12 +588,13 @@ addCommandHandler("delthisShop", delShop, false, false)
 			local interiorExit = getElementData(interior, "exit")
 		for _, point in ipairs( { interiorExit } ) do
 			
-			if (point[5] == dimension) then
-					local distance = getDistanceBetweenPoints3D(posX, posY, posZ, point[1], point[2], point[3])
+			if (point.dim == dimension) then
+					local distance = getDistanceBetweenPoints3D(posX, posY, posZ, point.x, point.y, point.z)
+					
 			if (distance <= 50) then
 			      local dbid = getElementData(interior, "dbid")
 	
-			       	     local getShopId = exports.sal:_QuerySingle( "SELECT * FROM CAFESHOPS WHERE ShopintDBID = ?", dbid)
+			       	     local getShopId = exports.newSQL:_QuerySingle( "SELECT * FROM CAFESHOPS WHERE ShopintDBID = ?", dbid)
 if getShopId == nil then 
 					 			 outputChatBox("لايوجد شوب هنا", source, 255, 0, 0)
 
@@ -623,14 +629,15 @@ addCommandHandler("thisShop", thisShop, false, false)
 			local interiorExit = getElementData(interior, "exit")
 		for _, point in ipairs( { interiorExit } ) do
 			
-			if (point[5] == dimension) then
-					local distance = getDistanceBetweenPoints3D(posX, posY, posZ, point[1], point[2], point[3])
+	if (point.dim == dimension) then
+					local distance = getDistanceBetweenPoints3D(posX, posY, posZ, point.x, point.y, point.z)
+
 			if (distance <= 50) then
 			      local dbid = getElementData(interior, "dbid")
 	
 	
 
- local getall = exports.sal:_Query( "SELECT shopID,ShopintDBID,ownerCharID,createdBY FROM CAFESHOPS" )
+ local getall = exports.newSQL:_Query( "SELECT shopID,ShopintDBID,ownerCharID,createdBY FROM CAFESHOPS" )
                                                     for i, dataget in pairs (getall) do
 												   
  					 			  outputChatBox(" ID: ".. dataget["shopID"] .." / INTERIOR ID: ".. dataget["ShopintDBID"] .." / OwnerCHARID:  ".. dataget["ownerCharID"] .." / Created By USER/ChrID: ".. dataget["createdBY"] .."", source, 0, 255, 0)
@@ -676,8 +683,8 @@ addCommandHandler("getallshops", getallshops, false, false)
 
 function soldWaters ( PlayerClnt,PlayerChrid,shopOwner )
 
-                   local getTableSell = exports.sal:_QuerySingle( "SELECT * FROM CAFESHOPS WHERE ownerCharID = ?", shopOwner)
-       	           local getSellerMoney = exports.sal:_QuerySingle( "SELECT bankmoney FROM characters WHERE id = ?", shopOwner)
+                   local getTableSell = exports.newSQL:_QuerySingle( "SELECT * FROM CAFESHOPS WHERE ownerCharID = ?", shopOwner)
+       	           local getSellerMoney = exports.newSQL:_QuerySingle( "SELECT bankmoney FROM characters WHERE id = ?", shopOwner)
 		 
        if getTableSell.Water == 0 then 
                    outputChatBox(" انتهى مخزون المياه الخاص بنا عد لاحقا   ", PlayerClnt, 255, 0, 0, true)
@@ -689,11 +696,11 @@ exports.global:giveItem( PlayerClnt, 15, 1)
 
 exports.global:takeMoney( PlayerClnt, 7 )
 
-exports.sal:_Exec("UPDATE `CAFESHOPS` SET `Water` = ? WHERE `ownerCharID` = " .. shopOwner.."",newValr)
+exports.newSQL:_Exec("UPDATE `CAFESHOPS` SET `Water` = ? WHERE `ownerCharID` = " .. shopOwner.."",newValr)
 
 local newSellerBank = getSellerMoney.bankmoney + 7 
 
-exports.sal:_Exec("UPDATE `characters` SET `bankmoney` = ? WHERE `id` = " .. shopOwner.."",newSellerBank)
+exports.newSQL:_Exec("UPDATE `characters` SET `bankmoney` = ? WHERE `id` = " .. shopOwner.."",newSellerBank)
 
 local zubi = exports.global:getPlayerFromCharacterID(tonumber(shopOwner))
 
@@ -714,8 +721,8 @@ addEventHandler ("soldWater", root, soldWaters)
 
 function soldFoods ( PlayerClnt,PlayerChrid,shopOwner )
 
-                   local getTableSell = exports.sal:_QuerySingle( "SELECT * FROM CAFESHOPS WHERE ownerCharID = ?", shopOwner)
-       	           local getSellerMoney = exports.sal:_QuerySingle( "SELECT bankmoney FROM characters WHERE id = ?", shopOwner)
+                   local getTableSell = exports.newSQL:_QuerySingle( "SELECT * FROM CAFESHOPS WHERE ownerCharID = ?", shopOwner)
+       	           local getSellerMoney = exports.newSQL:_QuerySingle( "SELECT bankmoney FROM characters WHERE id = ?", shopOwner)
 		 
        if getTableSell.Food == 0 then 
                    outputChatBox(" انتهى مخزون الاكل الخاص بنا عد لاحقا ", PlayerClnt, 255, 0, 0, true)
@@ -727,11 +734,11 @@ exports.global:giveItem( PlayerClnt, 1, 1)
 
 exports.global:takeMoney( PlayerClnt, 10 )
 
-exports.sal:_Exec("UPDATE `CAFESHOPS` SET `Food` = ? WHERE `ownerCharID` = " .. shopOwner.."",newValr)
+exports.newSQL:_Exec("UPDATE `CAFESHOPS` SET `Food` = ? WHERE `ownerCharID` = " .. shopOwner.."",newValr)
 
 local newSellerBank = getSellerMoney.bankmoney + 15 
 
-exports.sal:_Exec("UPDATE `characters` SET `bankmoney` = ? WHERE `id` = " .. shopOwner.."",newSellerBank)
+exports.newSQL:_Exec("UPDATE `characters` SET `bankmoney` = ? WHERE `id` = " .. shopOwner.."",newSellerBank)
 
 local zubi = exports.global:getPlayerFromCharacterID(tonumber(shopOwner))
 
